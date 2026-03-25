@@ -1,0 +1,7 @@
+.env
+.env.local
+node_modules/
+web/node_modules/
+.next/
+web/.next/
+__pycache__/
