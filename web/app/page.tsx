@@ -44,6 +44,13 @@ export default function SEODashboard() {
               <span className="text-xs text-slate-400">{new Date(article.created_at).toLocaleDateString()}</span>
             </div>
 
+{/* Category Tag */}
+<div className="mt-2 flex items-center gap-2">
+  <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-tighter">
+    {article.category}
+  </span>
+</div>
+
             {/* Card Body: The MECE Summary */}
             <div className="p-6">
               <h2 className="text-xl font-semibold text-slate-900 mb-4">{article.source_name} Update</h2>

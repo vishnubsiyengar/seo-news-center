@@ -55,6 +55,7 @@ async def process_article(article_url):
         "title": f"Update from {source_domain}", 
         "source_url": article_url,
         "source_name": source_domain,
+        "category": analysis.get("category", "General SEO"), # New mapping
         "raw_content": scrape_result["data"][:5000],
         "summary_technical": analysis["summary"],
         "confidence_score": analysis["confidence_score"],
