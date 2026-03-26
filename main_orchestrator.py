@@ -4,9 +4,10 @@ import time
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-# --- IMPORTS ---
+# --- SKILLS & AGENTS ---
 from skills.web_scraper import run_scraper
 from agents.manager_agent import run_manager_agent
+from agents.clustering_agent import run_clustering_agent
 
 load_dotenv()
 
@@ -16,7 +17,6 @@ key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 # --- THE SOURCE REGISTRY ---
-# You can add or remove URLs here as your strategy evolves.
 SEO_SOURCES = [
     "https://developers.google.com/search/blog",
     "https://www.searchenginejournal.com/category/seo/",
@@ -26,7 +26,7 @@ SEO_SOURCES = [
 ]
 
 async def process_article(article_url):
-    """Processes a single URL through the Ingest -> Synthesize -> Save pipeline."""
+    """Pipeline: Ingest -> Summarize -> Cluster -> Save"""
     source_domain = article_url.split("//")[-1].split("/")[0]
     print(f"\n[ORCHESTRATOR] Checking: {source_domain}...")
 
@@ -36,43 +36,41 @@ async def process_article(article_url):
         print(f"   - SKIPPING: Already indexed.")
         return
 
-    # 2. INGESTION
+    # 2. INGESTION (Playwright)
     scrape_result = await run_scraper(article_url)
     if scrape_result["status"] == "error":
         print(f"   - FAILED: Scrape error.")
         return
 
-    # 3. SYNTHESIS (The Brain)
-    # Note: We pass the raw data to the Manager Agent
+    # 3. SYNTHESIS (Manager Agent)
     analysis = run_manager_agent(scrape_result["data"], source_domain)
     
     if "REJECTED" in analysis["judge_verdict"]:
         print(f"   - REJECTED: Failed quality gate.")
         return
 
-# 3.5 CLUSTERING LOGIC (The Triage Check)
-    # Fetch titles/IDs of articles from the last 48 hours
+    # 4. CLUSTERING (The Triage Check)
+    # Fetch recent events from Supabase to check for matches
     recent_data = supabase.table("articles").select("id, event_title").limit(10).execute()
     existing_events = recent_data.data if recent_data.data else []
-
+    
     cluster_verdict = run_clustering_agent(analysis["summary"], existing_events)
     
-    # If it's a new event, we use its own ID as the Cluster ID
-    # If it's related, we inherit the existing Cluster ID
+    # Logic: Assign event_title only if it's a NEW cluster
     event_title = analysis.get("category") if cluster_verdict == "NEW" else None
+    assigned_cluster_id = None if cluster_verdict == "NEW" else cluster_verdict
 
-    # 4. PERSISTENCE
+    # 5. DATA PERSISTENCE (Verified Syntax)
     data_to_save = {
-        "title": f"Update from {source_domain}", 
+        "title": f"Update from {source_domain}",
         "source_url": article_url,
         "source_name": source_domain,
-        "category": analysis.get("category", "General SEO"), # New mapping
-        "raw_content": scrape_result["data"][:5000],
+        "category": analysis.get("category", "General SEO"),
         "summary_technical": analysis["summary"],
         "confidence_score": analysis["confidence_score"],
+        "impact_score": analysis.get("impact_score", 5.0),
         "food_for_thought": analysis["questions"],
-        "impact_score": analysis.get("impact_score", 5.0)
-        "cluster_id": cluster_verdict if cluster_verdict != "NEW" else None,
+        "cluster_id": assigned_cluster_id,
         "event_title": event_title
     }
 
@@ -87,8 +85,8 @@ async def run_news_cycle():
     print("🚀 STARTING SEO INTELLIGENCE CYCLE")
     for source in SEO_SOURCES:
         await process_article(source)
-        # Clinical Grace Period: We wait 2 seconds between sources to be a 'Good Crawler'
-        time.sleep(2)
+        # Polite delay to avoid bot detection
+        await asyncio.sleep(2)
     print("\n🏁 CYCLE COMPLETE: All sources processed.")
 
 if __name__ == "__main__":
