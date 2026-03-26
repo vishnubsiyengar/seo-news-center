@@ -51,6 +51,19 @@ export default function SEODashboard() {
   </span>
 </div>
 
+{/* Impact/Severity Indicator */}
+<div className="flex items-center gap-1.5 mt-1">
+  <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
+    <div 
+      className={`h-full ${article.impact_score > 8 ? 'bg-red-500' : article.impact_score > 5 ? 'bg-amber-500' : 'bg-blue-400'}`}
+      style={{ width: `${article.impact_score * 10}%` }}
+    />
+  </div>
+  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+    Impact: {article.impact_score}
+  </span>
+</div>
+
             {/* Card Body: The MECE Summary */}
             <div className="p-6">
               <h2 className="text-xl font-semibold text-slate-900 mb-4">{article.source_name} Update</h2>

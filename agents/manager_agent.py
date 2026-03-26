@@ -21,14 +21,21 @@ def run_manager_agent(raw_text, source_domain):
     {raw_text[:8000]} 
 
     TASK:
-    1. SUMMARY: Provide a MECE (Mutually Exclusive, Collectively Exhaustive) Summary in bullet points:
+    1. CLASSIFICATION: Choose the MOST relevant category from this list: 
+       [Technical SEO, Algorithm Update, Content Strategy, E-commerce, AI & Search]
+    2. IMPACT SCORE: Assign a score (0.0 to 10.0) based on this Severity Index:
+       - 9.0 - 10.0: CRITICAL (Core Algorithm Updates, Major API Deprecations, Global Indexing changes).
+       - 6.0 - 8.0: SIGNIFICANT (Search Console tool updates, schema changes, new ranking factors).
+       - 3.0 - 5.0: MODERATE (Best practice refinements, industry case studies, documentation tweaks).
+       - 0.1 - 2.0: LOW (Event announcements, guest interviews, general industry news).
+    3. SUMMARY: Provide a MECE (Mutually Exclusive, Collectively Exhaustive) Summary in bullet points:
        - Technical Delta: The exact changes to code/documentation.
        - Strategic Implications: The broader search impact (use 'could' or 'may').
        - Execution Constraints: Resource or technical requirements.
-    2. TONE: Simple, Direct, and Clinical.
-    3. TWEET EXCEPTION: If the input is a short tweet, provide it verbatim first.
-    4. QUESTIONS: Generate 3 persona-agnostic 'Food for Thought' questions for builders.
-    5. CONFIDENCE SCORE: Assign a score (0.01 to 10.0) based on the Itamar Gilad Framework:
+    4. TONE: Simple, Direct, and Clinical.
+    5. TWEET EXCEPTION: If the input is a short tweet, provide it verbatim first.
+    6. QUESTIONS: Generate 3 persona-agnostic 'Food for Thought' questions for builders.
+    7. CONFIDENCE SCORE: Assign a score (0.01 to 10.0) based on the Itamar Gilad Framework:
        - 0.01 - 0.1: Near-Zero (Opinions, Pitch Decks, Thematic support)
        - 0.2 - 0.5: Very Low/Low (Estimates, Anecdotal evidence)
        - 1.0 - 3.0: Med-Low (Market data, User evidence)
@@ -36,7 +43,7 @@ def run_manager_agent(raw_text, source_domain):
        - 10.0: High (Official Launch Data / Google Docs)
 
     FORMAT: You MUST return a valid JSON object with these keys: 
-    "verbatim", "summary", "confidence_score", "questions"
+    "category","verbatim", "summary", "confidence_score", "questions"
     """
 
     # Call the High-Capacity Model (Llama 3.3 70B)
