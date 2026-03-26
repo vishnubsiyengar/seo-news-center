@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -14,53 +15,67 @@ url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
-async def process_new_article(article_url):
-    print(f"\n[ORCHESTRATOR] Processing: {article_url}")
+# --- THE SOURCE REGISTRY ---
+# You can add or remove URLs here as your strategy evolves.
+SEO_SOURCES = [
+    "https://developers.google.com/search/blog",
+    "https://www.searchenginejournal.com/category/seo/",
+    "https://searchengineland.com/library/platforms/google/google-search-console/",
+    "https://backlinko.com/blog",
+    "https://ahrefs.com/blog/"
+]
 
-    # 1. DUPLICATION GUARD: Check if we already have this article
+async def process_article(article_url):
+    """Processes a single URL through the Ingest -> Synthesize -> Save pipeline."""
+    source_domain = article_url.split("//")[-1].split("/")[0]
+    print(f"\n[ORCHESTRATOR] Checking: {source_domain}...")
+
+    # 1. DUPLICATION GUARD
     existing = supabase.table("articles").select("id").eq("source_url", article_url).execute()
     if existing.data:
-        print(">>> SKIPPING: Article already exists in the 12-month database.")
+        print(f"   - SKIPPING: Already indexed.")
         return
 
-    # 2. INGESTION (The Skill)
+    # 2. INGESTION
     scrape_result = await run_scraper(article_url)
     if scrape_result["status"] == "error":
-        print(f"!!! SCRAPE FAILED: {scrape_result['message']}")
+        print(f"   - FAILED: Scrape error.")
         return
 
-    raw_text = scrape_result["data"]
-    source_domain = article_url.split("//")[-1].split("/")[0]
-
-    # 3. SYNTHESIS & JUDGE (The Multi-Agent Brain)
-    # The 'analysis' variable is now a DICTIONARY, not just text.
-    analysis = run_manager_agent(raw_text, source_domain)
+    # 3. SYNTHESIS (The Brain)
+    # Note: We pass the raw data to the Manager Agent
+    analysis = run_manager_agent(scrape_result["data"], source_domain)
     
-    print(f"--- JUDGE VERDICT: {analysis['judge_verdict']} ---")
     if "REJECTED" in analysis["judge_verdict"]:
-        print("!!! QUALITY GATE FAILED: Summary rejected by Judge.")
+        print(f"   - REJECTED: Failed quality gate.")
         return
 
-    # 4. DATA PERSISTENCE (Saving to Supabase)
-    # Mapping the JSON keys to our Database Columns
+    # 4. PERSISTENCE
     data_to_save = {
-        "title": f"SEO Update: {source_domain}", 
+        "title": f"Update from {source_domain}", 
         "source_url": article_url,
         "source_name": source_domain,
-        "raw_content": raw_text[:5000],
-        "summary_technical": analysis["summary"], # The MECE bullets
-        "confidence_score": analysis["confidence_score"], # The Itamar Gilad score
-        "food_for_thought": analysis["questions"], # The persona-agnostic questions
-        "verbatim_text": analysis.get("verbatim", ""), # Verbatim tweet if applicable
-        "impact_score": 5.0 # We will automate this metric in v1.1
+        "raw_content": scrape_result["data"][:5000],
+        "summary_technical": analysis["summary"],
+        "confidence_score": analysis["confidence_score"],
+        "food_for_thought": analysis["questions"],
+        "impact_score": 5.0
     }
 
     try:
         supabase.table("articles").insert(data_to_save).execute()
-        print(f"✅ SUCCESS: Intelligence captured with Confidence Score: {analysis['confidence_score']}")
+        print(f"   ✅ SUCCESS: Captured with Confidence {analysis['confidence_score']}")
     except Exception as e:
-        print(f"!!! DATABASE ERROR: {e}")
+        print(f"   - DB ERROR: {e}")
+
+async def run_news_cycle():
+    """Iterates through the manifest of SEO sources."""
+    print("🚀 STARTING SEO INTELLIGENCE CYCLE")
+    for source in SEO_SOURCES:
+        await process_article(source)
+        # Clinical Grace Period: We wait 2 seconds between sources to be a 'Good Crawler'
+        time.sleep(2)
+    print("\n🏁 CYCLE COMPLETE: All sources processed.")
 
 if __name__ == "__main__":
-    test_link = "https://developers.google.com/search/blog"
-    asyncio.run(process_new_article(test_link))
+    asyncio.run(run_news_cycle())
