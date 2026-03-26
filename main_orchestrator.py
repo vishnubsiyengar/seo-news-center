@@ -50,6 +50,17 @@ async def process_article(article_url):
         print(f"   - REJECTED: Failed quality gate.")
         return
 
+# 3.5 CLUSTERING LOGIC (The Triage Check)
+    # Fetch titles/IDs of articles from the last 48 hours
+    recent_data = supabase.table("articles").select("id, event_title").limit(10).execute()
+    existing_events = recent_data.data if recent_data.data else []
+
+    cluster_verdict = run_clustering_agent(analysis["summary"], existing_events)
+    
+    # If it's a new event, we use its own ID as the Cluster ID
+    # If it's related, we inherit the existing Cluster ID
+    event_title = analysis.get("category") if cluster_verdict == "NEW" else None
+
     # 4. PERSISTENCE
     data_to_save = {
         "title": f"Update from {source_domain}", 
@@ -60,7 +71,9 @@ async def process_article(article_url):
         "summary_technical": analysis["summary"],
         "confidence_score": analysis["confidence_score"],
         "food_for_thought": analysis["questions"],
-        "impact_score": 5.0
+        "impact_score": analysis.get("impact_score", 5.0)
+        "cluster_id": cluster_verdict if cluster_verdict != "NEW" else None,
+        "event_title": event_title
     }
 
     try:

@@ -30,72 +30,90 @@ export default function SEODashboard() {
         <p className="text-slate-500">Uncolored Intelligence for Builders</p>
       </header>
 
-      <main className="max-w-4xl mx-auto space-y-6">
-        {articles.map((article) => (
-          <div key={article.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-            {/* Card Header: Confidence Pill */}
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <Shield className={`w-4 h-4 ${article.confidence_score > 7 ? 'text-emerald-500' : 'text-amber-500'}`} />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Confidence: {article.confidence_score}/10
-                </span>
-              </div>
-              <span className="text-xs text-slate-400">{new Date(article.created_at).toLocaleDateString()}</span>
+      <main className="max-w-4xl mx-auto py-8">
+  {articles.map((article) => (
+    /* The Timeline Wrapper: Creates the vertical grey line */
+    <div key={article.id} className="relative pl-8 pb-12 border-l-2 border-slate-200 last:border-0 ml-4">
+      
+      {/* The Timeline Dot: Positioned exactly on the vertical line */}
+      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-sm" />
+      
+      {/* Your Existing Card Structure, now nested inside the timeline */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow -mt-2">
+        
+        {/* Card Header: Confidence Pill */}
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <Shield className={`w-4 h-4 ${article.confidence_score > 7 ? 'text-emerald-500' : 'text-amber-500'}`} />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                Confidence: {article.confidence_score}/10
+              </span>
+            </div>
+            
+            {/* Category Tag (Integrated from your snippet) */}
+            <div className="mt-2 flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-tighter">
+                {article.category}
+              </span>
             </div>
 
-{/* Category Tag */}
-<div className="mt-2 flex items-center gap-2">
-  <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-tighter">
-    {article.category}
-  </span>
-</div>
-
-{/* Impact/Severity Indicator */}
-<div className="flex items-center gap-1.5 mt-1">
-  <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
-    <div 
-      className={`h-full ${article.impact_score > 8 ? 'bg-red-500' : article.impact_score > 5 ? 'bg-amber-500' : 'bg-blue-400'}`}
-      style={{ width: `${article.impact_score * 10}%` }}
-    />
-  </div>
-  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-    Impact: {article.impact_score}
-  </span>
-</div>
-
-            {/* Card Body: The MECE Summary */}
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-slate-900 mb-4">{article.source_name} Update</h2>
-              
-              <div className="prose prose-slate max-w-none">
-                <pre className="whitespace-pre-wrap font-sans text-slate-700 text-sm leading-relaxed">
-                  {article.summary_technical}
-                </pre>
+            {/* Impact Indicator (Integrated from your snippet) */}
+            <div className="flex items-center gap-1.5 mt-2 w-32">
+              <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${article.impact_score > 8 ? 'bg-red-500' : article.impact_score > 5 ? 'bg-amber-500' : 'bg-blue-400'}`}
+                  style={{ width: `${article.impact_score * 10}%` }}
+                />
               </div>
-
-              {/* Food for Thought Section */}
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <h3 className="flex items-center gap-2 text-blue-700 font-bold text-sm mb-2">
-                  <Zap className="w-4 h-4" /> Food for Thought
-                </h3>
-                <ul className="list-disc list-inside text-sm text-blue-600 space-y-1">
-                  {article.food_for_thought?.map((q: string, i: number) => (
-                    <li key={i}>{q}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Footer: Read Original */}
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
-              <a href={article.source_url} target="_blank" className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">
-                Read Original Article <ExternalLink className="w-4 h-4" />
-              </a>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                Impact: {article.impact_score}
+              </span>
             </div>
           </div>
-        ))}
-      </main>
+          <span className="text-xs text-slate-400 self-start">{new Date(article.created_at).toLocaleDateString()}</span>
+        </div>
+
+        {/* Card Body */}
+        <div className="p-6">
+          {/* Logic: Uses the Grouped Event Title if available, else falls back to source */}
+          <h2 className="text-xl font-bold text-slate-900 mb-1">
+            {article.event_title || `${article.source_name} Update`}
+          </h2>
+          <p className="text-xs text-slate-400 mb-4 tracking-wide uppercase font-medium">
+            Verified Coverage by {article.source_name}
+          </p>
+          
+          <div className="prose prose-slate max-w-none">
+            <pre className="whitespace-pre-wrap font-sans text-slate-700 text-sm leading-relaxed">
+              {article.summary_technical}
+            </pre>
+          </div>
+
+          {/* Food for Thought */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <h3 className="flex items-center gap-2 text-blue-700 font-bold text-sm mb-2">
+              <Zap className="w-4 h-4" /> Food for Thought
+            </h3>
+            <ul className="list-disc list-inside text-sm text-blue-600 space-y-1">
+              {article.food_for_thought?.map((q: string, i: number) => (
+                <li key={i}>{q}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
+          <a href={article.source_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+            Read Original Article <ExternalLink className="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    </div>
+  ))}
+</main>
+
     </div>
   )
 }
